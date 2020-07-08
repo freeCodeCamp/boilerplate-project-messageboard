@@ -1,6 +1,8 @@
 **FreeCodeCamp**- Information Security and Quality Assurance
 ------
 
+[![Run on Repl.it](https://repl.it/badge/github/freeCodeCamp/boilerplate-project-messageboard)](https://repl.it/github/freeCodeCamp/boilerplate-project-messageboard)
+
 Project Anon Message Board
 
 1) SET NODE_ENV to `test` without quotes when ready to write tests and DB to your databases connection string (in .env)

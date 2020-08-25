@@ -1,7 +1,3 @@
-# FCC Information Security Projects 02 - Anonymous Message Board
-
-## Glitch Link is Here: https://glitch.com/~fcc-anonymous-message-board-afg
-
 **FreeCodeCamp**- Information Security and Quality Assurance
 ------
 

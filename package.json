@@ -8,7 +8,7 @@
 	},
 	"dependencies": {
 		"body-parser": "^1.15.2",
-		"chai": "^3.5.0",
+		"chai": "^4.2.0",
 		"chai-http": "^3.0.0",
 		"cors": "^2.8.1",
 		"dotenv": "^8.2.0",

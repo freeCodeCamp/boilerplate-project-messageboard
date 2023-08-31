@@ -8,6 +8,8 @@ const apiRoutes         = require('./routes/api.js');
 const fccTestingRoutes  = require('./routes/fcctesting.js');
 const runner            = require('./test-runner');
 
+require("./db-connection")
+
 const app = express();
 
 app.use('/public', express.static(process.cwd() + '/public'));

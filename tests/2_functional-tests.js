@@ -67,10 +67,10 @@ suite('Functional Tests', function() {
                 done()
             });
         });
-        test('POST /api/threads/{board}', function(done) {
+        test('PUT /api/threads/{board}', function(done) {
             chai.request(server)
             .keepOpen()
-            .delete('/api/threads/test')
+            .put('/api/threads/test')
             .send({
                 thread_id: threadId
             })
@@ -153,7 +153,7 @@ suite('Functional Tests', function() {
         test('PUT /api/replies/{board}', function(done) {
             chai.request(server)
             .keepOpen()
-            .delete('/api/replies/test')
+            .put('/api/replies/test')
             .send({
                 thread_id: threadId,
                 reply_id: replyId

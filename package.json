@@ -15,6 +15,7 @@
 		"express": "^4.14.0",
 		"helmet": "^3.1.0",
 		"mocha": "^10.2.0",
+		"mongoose": "^7.5.0",
 		"nodemon": "^3.0.1"
 	},
 	"repository": {

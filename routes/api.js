@@ -118,10 +118,11 @@ module.exports = function (app) {
     
   app.route('/api/replies/:board')
     .post(function(req, res) {
-
+      let timestamp = new Date()
       let newReply = new ReplyModel({ 
         text: req.body.text, 
-        delete_password: req.body.delete_password
+        delete_password: req.body.delete_password,
+        created_on: timestamp
       })
       BoardModel.findOne({name: req.params.board})
       .then(board => {

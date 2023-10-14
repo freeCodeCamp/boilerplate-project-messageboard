@@ -6,8 +6,14 @@ const server = require('../server');
 chai.use(chaiHttp);
 
 suite('Functional Tests', function() {
-    let threadId = ""
-    let replyId = ""
+    let thread1Id = ""
+    let thread2Id = ""
+    let password1 = ""
+    let password2 = ""
+    let reply1Id = ""
+    let reply2Id = ""
+    let reply1Password = ""
+    let reply2Password = ""
     suite('TEST /api/threads/{board}', function() {
         
         test('POST /api/threads/{board}', function(done) {
@@ -16,10 +22,24 @@ suite('Functional Tests', function() {
             .post('/api/threads/test')
             .send({
                 text: "Test",
-                password_string: "TestPassword"
+                delete_password: "TestPassword"
             })
             .end(function(err, res) {
                 assert.equal(res.status, 200)
+                thread1Id = res.body._id
+                password1 = res.body.delete_password
+            })
+            chai.request(server)
+            .keepOpen()
+            .post('/api/threads/test2')
+            .send({
+                text: "Test2",
+                delete_password: "Password"
+            })
+            .end(function(err, res) {
+                assert.equal(res.status, 200)
+                thread2Id = res.body._id
+                password2 = res.body.delete_password
                 done()
             });
         });
@@ -33,37 +53,46 @@ suite('Functional Tests', function() {
                 assert.isAtMost(res.body.length, 10)
                 assert.property(res.body[0], 'replies')
                 assert.isAtMost(res.body[0].replies.length, 3)
-                threadId = res.body[0]._id
+            });
+            chai.request(server)
+            .keepOpen()
+            .get('/api/threads/test2')
+            .end(function(err, res) {
+                assert.equal(res.status, 200)
+                assert.isArray(res.body);
+                assert.isAtMost(res.body.length, 10)
+                assert.property(res.body[0], 'replies')
+                assert.isAtMost(res.body[0].replies.length, 3)
                 done()
             });
         });
         test('DELETE /api/threads/{board} with invalid password', function(done) {
             chai.request(server)
             .keepOpen()
-            .delete('/api/threads/test')
+            .delete('/api/threads/test2')
             .send({
-                thread_id: threadId,
+                thread_id: thread2Id,
                 delete_password: 'invalid password'
             })
             .end(function(err, res) {
                 assert.equal(res.status, 200)
-                assert.isString(res.body)
-                assert.equal(res.body, 'incorrect password')
+                assert.isString(res.text)
+                assert.equal(res.text, 'incorrect password')
                 done()
             });
         });
         test('DELETE /api/threads/{board} with valid password', function(done) {
             chai.request(server)
             .keepOpen()
-            .delete('/api/threads/test')
+            .delete('/api/threads/test2')
             .send({
-                thread_id: threadId,
-                delete_password: 'TestPassword'
+                thread_id: thread2Id,
+                delete_password: password2
             })
             .end(function(err, res) {
                 assert.equal(res.status, 200)
-                assert.isString(res.body)
-                assert.equal(res.body, 'success')
+                assert.isString(res.text)
+                assert.equal(res.text, 'success')
                 done()
             });
         });
@@ -72,12 +101,12 @@ suite('Functional Tests', function() {
             .keepOpen()
             .put('/api/threads/test')
             .send({
-                thread_id: threadId
+                thread_id: thread1Id
             })
             .end(function(err, res) {
                 assert.equal(res.status, 200)
-                assert.isString(res.body)
-                assert.equal(res.body, 'reported')
+                assert.isString(res.text)
+                assert.equal(res.text, 'reported')
                 done()
             });
         });
@@ -88,21 +117,36 @@ suite('Functional Tests', function() {
             .keepOpen()
             .post('/api/replies/test')
             .send({
-                thread_id: threadId,
+                thread_id: thread1Id,
                 text: "Test",
-                password_string: "TestPassword"
+                delete_password: "TestPassword"
             })
             .end(function(err, res) {
                 assert.equal(res.status, 200)
+                reply1Id = res.body._id
+                reply1Password = res.body.delete_password
+            });
+            chai.request(server)
+            .keepOpen()
+            .post('/api/replies/test')
+            .send({
+                thread_id: thread1Id,
+                text: "another reply",
+                delete_password: "pass"
+            })
+            .end(function(err, res) {
+                assert.equal(res.status, 200)
+                reply2Id = res.body._id
+                reply2Password = res.body.delete_password
                 done()
             });
         });
         test('GET /api/replies/{board}?thread_id={thread_id}', function(done) {
             chai.request(server)
             .keepOpen()
-            .post('/api/replies/test')
+            .get('/api/replies/test')
             .query({
-                "thread_id": threadId
+                "thread_id": thread1Id
             })
             .end(function(err, res) {
                 let replies = []
@@ -114,7 +158,6 @@ suite('Functional Tests', function() {
                     assert.notProperty(element, 'reported')
                     assert.notProperty(element, 'delete_password')
                 });
-                replyId = replies[0].id
                 done()
             });
         });
@@ -123,14 +166,14 @@ suite('Functional Tests', function() {
             .keepOpen()
             .delete('/api/replies/test')
             .send({
-                thread_id: threadId,
-                reply_id: replyId,
-                password_string: "Invalid"
+                thread_id: thread1Id,
+                reply_id: reply1Id,
+                delete_password: "Invalid"
             })
             .end(function(err, res) {
                 assert.equal(res.status, 200)
-                assert.isString(res.body)
-                assert.equal(res.body, 'incorrect password')
+                assert.isString(res.text)
+                assert.equal(res.text, 'incorrect password')
                 done()
             });
         });
@@ -139,14 +182,14 @@ suite('Functional Tests', function() {
             .keepOpen()
             .delete('/api/replies/test')
             .send({
-                thread_id: threadId,
-                reply_id: replyId,
-                password_string: "TestPassword"
+                thread_id: thread1Id,
+                reply_id: reply1Id,
+                delete_password: reply1Password
             })
             .end(function(err, res) {
                 assert.equal(res.status, 200)
-                assert.isString(res.body)
-                assert.equal(res.body, 'success')
+                assert.isString(res.text)
+                assert.equal(res.text, 'success')
                 done()
             });
         });
@@ -155,13 +198,13 @@ suite('Functional Tests', function() {
             .keepOpen()
             .put('/api/replies/test')
             .send({
-                thread_id: threadId,
-                reply_id: replyId
+                thread_id: thread1Id,
+                reply_id: reply2Id
             })
             .end(function(err, res) {
                 assert.equal(res.status, 200)
-                assert.isString(res.body)
-                assert.equal(res.body, 'reported')
+                assert.isString(res.text)
+                assert.equal(res.text, 'reported')
                 done()
             });
         });

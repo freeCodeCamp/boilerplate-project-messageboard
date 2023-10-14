@@ -4,7 +4,7 @@ const { Schema } = mongoose;
 
 const replySchema = new Schema({
     text: {type: String, required: true},
-    created_on: {type: Date, default: new Date()},
+    created_on: Date,
     delete_password: {type: String, required: true},
     reported: {type: Boolean, default: false}
 }, {versionKey: false})
@@ -13,8 +13,8 @@ const Reply = mongoose.model("Replies", replySchema);
 
 const threadSchema = new Schema({
     text: {type: String, required: true},
-    created_on: {type: Date, default: new Date()},
-    bumped_on: {type: Date, default: new Date()},
+    created_on: Date,
+    bumped_on: Date,
     delete_password: {type: String, required: true},
     reported: {type: Boolean, default: false},
     replies: [replySchema]

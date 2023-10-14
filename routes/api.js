@@ -12,10 +12,13 @@ module.exports = function (app) {
 
   app.route('/api/threads/:board')
     .post(function(req, res) {
+      let timestamp = new Date()
       const {text, delete_password} = req.body
       const newThread = new ThreadModel({
         text: text,
-        delete_password: delete_password
+        delete_password: delete_password,
+        created_on: timestamp,
+        bumped_on: timestamp
       })
       BoardModel.findOneAndUpdate({name: req.params.board}, { $push: { threads: newThread }}, {new: true})
       .then(board => {
@@ -131,7 +134,7 @@ module.exports = function (app) {
         }
         else {
           let thread = board.threads.id(req.body.thread_id)
-          thread.bumped_on = new Date();
+          thread.bumped_on = timestamp;
           thread.replies.push(newReply)
           board.save()
           .then(data => {

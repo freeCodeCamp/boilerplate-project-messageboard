@@ -1,6 +1,6 @@
 'use strict';
 
-const { Board, Thread } = require('../models');
+const { createNewThread } = require('../controllers/thread-controller');
 const { generateHash, validatePassword } = require('../password_encryption/password');
 
 
@@ -12,39 +12,16 @@ module.exports = function (app) {
 
   app.route('/api/threads/:board')
     .post(function(req, res) {
-      let timestamp = new Date()
       const {text, delete_password} = req.body
 
       generateHash(delete_password)
       .then(hash => {
-        const newThread = new ThreadModel({
-          text: text,
-          delete_password: hash,
-          created_on: timestamp,
-          bumped_on: timestamp
-        })
-        return newThread
+        return createNewThread(req.params.board, text, hash)
       })
       .then(thread => {
-        BoardModel.findOneAndUpdate({name: req.params.board}, { $push: { threads: thread }}, {new: true})
-        .then(board => {
-
-          if(!board) {
-            let newBoard = new BoardModel({ name: req.params.board, threads: [thread] })
-            newBoard.save()
-            .then(data => {
-              res.json(thread)
-            })
-          }
-          else {            
-            res.json(thread)
-          }
-        })
-        .catch(error => {
-          res.json({ error: 'Could not save thread' })
-        })
-
+        res.json(thread)
       })
+
     })
     .get(function(req, res) {
       BoardModel.findOne({name: req.params.board})
@@ -97,7 +74,6 @@ module.exports = function (app) {
         console.error(error)
         res.json({ error: "could not add reply"})
       })
-      
     })
     .delete(function(req, res) {
       BoardModel.findOne({ name: req.params.board })

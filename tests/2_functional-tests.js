@@ -8,12 +8,12 @@ chai.use(chaiHttp);
 suite('Functional Tests', function() {
     let thread1Id = ""
     let thread2Id = ""
-    let password1 = ""
-    let password2 = ""
+    let password1 = "TestPassword"
+    let password2 = "Password"
     let reply1Id = ""
     let reply2Id = ""
-    let reply1Password = ""
-    let reply2Password = ""
+    let reply1Password = "TestPassword"
+    let reply2Password = "pass"
     suite('TEST /api/threads/{board}', function() {
         
         test('POST /api/threads/{board}', function(done) {
@@ -22,24 +22,22 @@ suite('Functional Tests', function() {
             .post('/api/threads/test')
             .send({
                 text: "Test",
-                delete_password: "TestPassword"
+                delete_password: password1
             })
             .end(function(err, res) {
                 assert.equal(res.status, 200)
                 thread1Id = res.body._id
-                password1 = res.body.delete_password
             })
             chai.request(server)
             .keepOpen()
             .post('/api/threads/test2')
             .send({
                 text: "Test2",
-                delete_password: "Password"
+                delete_password: password2
             })
             .end(function(err, res) {
                 assert.equal(res.status, 200)
                 thread2Id = res.body._id
-                password2 = res.body.delete_password
                 done()
             });
         });
@@ -119,12 +117,11 @@ suite('Functional Tests', function() {
             .send({
                 thread_id: thread1Id,
                 text: "Test",
-                delete_password: "TestPassword"
+                delete_password: reply1Password
             })
             .end(function(err, res) {
                 assert.equal(res.status, 200)
                 reply1Id = res.body._id
-                reply1Password = res.body.delete_password
             });
             chai.request(server)
             .keepOpen()
@@ -132,12 +129,11 @@ suite('Functional Tests', function() {
             .send({
                 thread_id: thread1Id,
                 text: "another reply",
-                delete_password: "pass"
+                delete_password: reply2Password
             })
             .end(function(err, res) {
                 assert.equal(res.status, 200)
                 reply2Id = res.body._id
-                reply2Password = res.body.delete_password
                 done()
             });
         });

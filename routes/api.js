@@ -1,9 +1,9 @@
 'use strict';
 
 const { Board, Thread } = require('../models');
+const { generateHash, validatePassword } = require('../password_encryption/password');
 
 
-const ObjectId = require('mongodb').ObjectId
 const BoardModel = require('../models').Board
 const ThreadModel = require('../models').Thread
 const ReplyModel = require('../models').Reply
@@ -14,27 +14,36 @@ module.exports = function (app) {
     .post(function(req, res) {
       let timestamp = new Date()
       const {text, delete_password} = req.body
-      const newThread = new ThreadModel({
-        text: text,
-        delete_password: delete_password,
-        created_on: timestamp,
-        bumped_on: timestamp
+
+      generateHash(delete_password)
+      .then(hash => {
+        const newThread = new ThreadModel({
+          text: text,
+          delete_password: hash,
+          created_on: timestamp,
+          bumped_on: timestamp
+        })
+        return newThread
       })
-      BoardModel.findOneAndUpdate({name: req.params.board}, { $push: { threads: newThread }}, {new: true})
-      .then(board => {
-        if(!board) {
-          let newBoard = new BoardModel({ name: req.params.board, threads: [newThread] })
-          newBoard.save()
-          .then(data => {
-            res.json(newThread)
-          })
-        }
-        else {            
-          res.json(newThread)
-        }
-      })
-      .catch(error => {
-        res.json({ error: 'Could not save thread' })
+      .then(thread => {
+        BoardModel.findOneAndUpdate({name: req.params.board}, { $push: { threads: thread }}, {new: true})
+        .then(board => {
+
+          if(!board) {
+            let newBoard = new BoardModel({ name: req.params.board, threads: [thread] })
+            newBoard.save()
+            .then(data => {
+              res.json(thread)
+            })
+          }
+          else {            
+            res.json(thread)
+          }
+        })
+        .catch(error => {
+          res.json({ error: 'Could not save thread' })
+        })
+
       })
     })
     .get(function(req, res) {
@@ -94,16 +103,19 @@ module.exports = function (app) {
       BoardModel.findOne({ name: req.params.board })
       .then(board => {
         let thread = board.threads.id(req.body.thread_id)
-        if(thread.delete_password === req.body.delete_password) {
-          board.threads.remove(thread)
-          board.save()
-          .then(data => {
-            res.send('success')
-          })
-        }
-        else {
-          res.send('incorrect password')
-        }
+        validatePassword(req.body.delete_password, thread.delete_password)
+        .then(valid => {
+          if(valid) {
+            board.threads.remove(thread)
+            board.save()
+            .then(data => {
+              res.send('success')
+            })
+          }
+          else {
+            res.send('incorrect password')
+          }
+        })
       })
       
     })
@@ -122,32 +134,41 @@ module.exports = function (app) {
   app.route('/api/replies/:board')
     .post(function(req, res) {
       let timestamp = new Date()
-      let newReply = new ReplyModel({ 
-        text: req.body.text, 
-        delete_password: req.body.delete_password,
-        created_on: timestamp
+
+      generateHash(req.body.delete_password)
+      .then(hash => {
+        return new ReplyModel({ 
+          text: req.body.text, 
+          delete_password: hash,
+          created_on: timestamp
+        })
       })
-      BoardModel.findOne({name: req.params.board})
-      .then(board => {
-        if(!board) {
-          res.json({error: "could not find board"})
-        }
-        else {
-          let thread = board.threads.id(req.body.thread_id)
-          thread.bumped_on = timestamp;
-          thread.replies.push(newReply)
-          board.save()
-          .then(data => {
-            res.json(newReply)
-          })
-          .catch(error => {
-            res.json({error: "couldn't add reply"})
-          })
-        }
+      .then(reply => {
+        BoardModel.findOne({name: req.params.board})
+        .then(board => {
+          if(!board) {
+            res.json({error: "could not find board"})
+          }
+          else {
+            let thread = board.threads.id(req.body.thread_id)
+            thread.bumped_on = timestamp;
+            thread.replies.push(reply)
+            board.save()
+            .then(data => {
+              res.json(reply)
+            })
+            .catch(error => {
+              res.json({error: "couldn't add reply"})
+            })
+          }
+        })
+        .catch(error => {
+          res.json({error: "couldn't add reply"})
+        })
       })
-      .catch(error => {
-        res.json({error: "couldn't add reply"})
-      })
+
+      
+      
 
     })
     .get(function(req, res) {
@@ -186,19 +207,20 @@ module.exports = function (app) {
       BoardModel.findOne({ name: req.params.board })
       .then(board => {
         let thread = board.threads.id(req.body.thread_id)
-        if(thread.delete_password === req.body.delete_password) {
-          let reply = thread.replies.id(req.body.reply_id)
-          reply.text = "[deleted]"
-          board.save()
-          .then(data => {
-            res.send('success')
-          })
-          
-
-        }
-        else {
-          res.send('incorrect password')
-        }
+        let reply = thread.replies.id(req.body.reply_id)
+        validatePassword(req.body.delete_password, reply.delete_password)
+        .then(result => {
+          if(result === true) {
+            reply.text = "[deleted]"
+            board.save()
+            .then(data => {
+              res.send('success')
+            })
+          }
+          else {
+            res.send('incorrect password')
+          }
+        })
       })
     })
     .put(function(req, res) {

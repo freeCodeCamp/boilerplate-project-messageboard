@@ -1,6 +1,6 @@
 'use strict';
 
-const { createNewThread } = require('../controllers/thread-controller');
+const { createNewThread, getThreads, reportThread } = require('../controllers/thread-controller');
 const { generateHash, validatePassword } = require('../password_encryption/password');
 
 
@@ -12,6 +12,7 @@ module.exports = function (app) {
 
   app.route('/api/threads/:board')
     .post(function(req, res) {
+
       const {text, delete_password} = req.body
 
       generateHash(delete_password)
@@ -24,58 +25,14 @@ module.exports = function (app) {
 
     })
     .get(function(req, res) {
-      BoardModel.findOne({name: req.params.board})
-      .then(board => {
-        
-        board.threads.sort((a,b) => {return a.bumped_on > b.bumped_on ? -1: a.bumped_on < b.bumped_on ? 1 : 0})
-        if(board.threads.length > 10) {
-          board.threads = board.threads.slice(0,10)
-        }
 
-        const threads = board.threads.map(thread => {
-          const {
-            _id,
-            text,
-            created_on,
-            bumped_on
-          } = thread
-
-          thread.replies.sort((a,b) => {return a.created_on > b.created_on ? -1: a.created_on < b.created_on ? 1 : 0})
-          
-          if(thread.replies.length > 3) {
-            thread.replies = thread.replies.slice(0,3)
-          }
-
-          const replies = thread.replies.map(reply => {
-            const {
-              _id,
-              text,
-              created_on
-            } = reply
-            return {
-              _id,
-              text,
-              created_on
-            }
-          })
-
-          return {
-            _id,
-            text,
-            created_on,
-            bumped_on,
-            replies,
-            replyCount: replies.length
-          }
-        })
+      getThreads(req.params.board)
+      .then(threads => {
         res.json(threads)
-      })
-      .catch(error => {
-        console.error(error)
-        res.json({ error: "could not add reply"})
       })
     })
     .delete(function(req, res) {
+      
       BoardModel.findOne({ name: req.params.board })
       .then(board => {
         let thread = board.threads.id(req.body.thread_id)
@@ -96,14 +53,9 @@ module.exports = function (app) {
       
     })
     .put(function(req, res) {
-      BoardModel.findOne({name: req.params.board})
-      .then(board => {
-        let thread = board.threads.id(req.body.thread_id)
-        thread.reported = true
-        board.save()
-        .then(data => {
-          res.send('reported')
-        })
+      reportThread(req.params.board, req.body.thread_id)
+      .then(() => {
+        res.send('reported')
       })
     })
     

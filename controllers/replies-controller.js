@@ -54,5 +54,19 @@ function getReplies(board, thread_id) {
     })
 }
 
+function reportReply(board, thread_id, reply_id) {
+    return BoardModel.findOne({ name: board })
+    .then(boardData => {
+        let thread = boardData.threads.id(thread_id)
+        let reply = thread.replies.id(reply_id)
+        reply.reported = true
+        return boardData.save()
+        .then(data => {
+          return 'reported'
+        })
+    })
+}
+
 exports.addReply = addReply
 exports.getReplies = getReplies
+exports.reportReply = reportReply

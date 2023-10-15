@@ -1,6 +1,6 @@
 'use strict';
 
-const { addReply, getReplies } = require('../controllers/replies-controller');
+const { addReply, getReplies, reportReply } = require('../controllers/replies-controller');
 const { createNewThread, getThreads, reportThread, deleteThread } = require('../controllers/thread-controller');
 const { generateHash, validatePassword } = require('../password_encryption/password');
 
@@ -84,15 +84,9 @@ module.exports = function (app) {
       })
     })
     .put(function(req, res) {
-      BoardModel.findOne({ name: req.params.board })
-      .then(board => {
-        let thread = board.threads.id(req.body.thread_id)
-        let reply = thread.replies.id(req.body.reply_id)
-        reply.reported = true
-        board.save()
-        .then(data => {
-          res.send('reported')
-        })
+      return reportReply(req.params.board, req.body.thread_id, req.body.reply_id)
+      .then(result => {
+        res.send(result)
       })
     })
 

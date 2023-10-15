@@ -1,10 +1,14 @@
-const getRepliesArray = (replies) => {
+const getRepliesArray = (replies, allReplies = false) => {
     let newArray = replies
 
     newArray.sort((a,b) => {return a.created_on > b.created_on ? -1: a.created_on < b.created_on ? 1 : 0})
-    if(newArray.length > 3) {
-      newArray = newArray.slice(0,3)
+    
+    if(!allReplies) {
+        if(newArray.length > 3) {
+            newArray = newArray.slice(0,3)
+        }
     }
+    
 
     return newArray.map(reply => {
         const {

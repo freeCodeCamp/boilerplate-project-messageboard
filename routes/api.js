@@ -1,5 +1,6 @@
 'use strict';
 
+const { addReply, getReplies } = require('../controllers/replies-controller');
 const { createNewThread, getThreads, reportThread, deleteThread } = require('../controllers/thread-controller');
 const { generateHash, validatePassword } = require('../password_encryption/password');
 
@@ -48,73 +49,19 @@ module.exports = function (app) {
     
   app.route('/api/replies/:board')
     .post(function(req, res) {
-      let timestamp = new Date()
-
       generateHash(req.body.delete_password)
       .then(hash => {
-        return new ReplyModel({ 
-          text: req.body.text, 
-          delete_password: hash,
-          created_on: timestamp
-        })
+        return addReply(req.params.board, req.body.thread_id, req.body.text, hash)
       })
-      .then(reply => {
-        BoardModel.findOne({name: req.params.board})
-        .then(board => {
-          if(!board) {
-            res.json({error: "could not find board"})
-          }
-          else {
-            let thread = board.threads.id(req.body.thread_id)
-            thread.bumped_on = timestamp;
-            thread.replies.push(reply)
-            board.save()
-            .then(data => {
-              res.json(reply)
-            })
-            .catch(error => {
-              res.json({error: "couldn't add reply"})
-            })
-          }
-        })
-        .catch(error => {
-          res.json({error: "couldn't add reply"})
-        })
+      .then(result => {
+        res.json(result)
       })
-
-
     })
     .get(function(req, res) {
-
-      BoardModel.findOne({name: req.params.board})
-      .then(board => {
-        let thread = board.threads.id(req.query.thread_id)
-        let replies = thread.replies
-        replies.sort((a,b) => {return a.created_on > b.created_on ? -1 : a.created_on < b.created_on ? 1 : 0})
-        replies = replies.map(reply => {
-          const {
-            _id,
-            text,
-            created_on
-          } = reply;
-          return {
-            _id,
-            text,
-            created_on
-          };
-        })
-        res.json({
-          _id: thread._id,
-          text: thread.text,
-          created_on: thread.created_on,
-          bumped_on: thread.bumped_on,
-          replies: replies
-        })
+      getReplies(req.params.board, req.query.thread_id)
+      .then(thread=> {
+        res.json(thread)
       })
-      .catch(error => {
-        console.error(error)
-      })
-      
     })
     .delete(function(req, res) {
       BoardModel.findOne({ name: req.params.board })

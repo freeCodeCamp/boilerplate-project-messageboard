@@ -1,6 +1,6 @@
 'use strict';
 
-const { addReply, getReplies, reportReply } = require('../controllers/replies-controller');
+const { addReply, getReplies, reportReply, deleteReply } = require('../controllers/replies-controller');
 const { createNewThread, getThreads, reportThread, deleteThread } = require('../controllers/thread-controller');
 const { generateHash, validatePassword } = require('../password_encryption/password');
 
@@ -64,27 +64,13 @@ module.exports = function (app) {
       })
     })
     .delete(function(req, res) {
-      BoardModel.findOne({ name: req.params.board })
-      .then(board => {
-        let thread = board.threads.id(req.body.thread_id)
-        let reply = thread.replies.id(req.body.reply_id)
-        validatePassword(req.body.delete_password, reply.delete_password)
-        .then(result => {
-          if(result === true) {
-            reply.text = "[deleted]"
-            board.save()
-            .then(data => {
-              res.send('success')
-            })
-          }
-          else {
-            res.send('incorrect password')
-          }
-        })
+      deleteReply(req.params.board, req.body.thread_id, req.body.reply_id, req.body.delete_password)
+      .then(result => {
+        res.send(result)
       })
     })
     .put(function(req, res) {
-      return reportReply(req.params.board, req.body.thread_id, req.body.reply_id)
+      reportReply(req.params.board, req.body.thread_id, req.body.reply_id)
       .then(result => {
         res.send(result)
       })

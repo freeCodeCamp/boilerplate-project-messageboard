@@ -1,3 +1,4 @@
+const { validatePassword } = require('../password_encryption/password')
 const { getRepliesArray } = require('./arrays')
 
 const BoardModel = require('../models').Board
@@ -66,7 +67,31 @@ function reportReply(board, thread_id, reply_id) {
         })
     })
 }
+function deleteReply(board, thread_id, reply_id, delete_password) {
+    return BoardModel.findOne({ name: board })
+    .then(boardData => {
+        let thread = boardData.threads.id(thread_id)
+        let reply = thread.replies.id(reply_id)
+        return validatePassword(delete_password, reply.delete_password)
+        .then(result => {
+          if(result === true) {
+            reply.text = "[deleted]"
+            return boardData.save()
+            .then(data => {
+              return 'success'
+            })
+          }
+          else {
+            return 'incorrect password'
+          }
+        })
+      })
+      .catch(error => {
+        console.error(error)
+      })
+}
 
 exports.addReply = addReply
 exports.getReplies = getReplies
 exports.reportReply = reportReply
+exports.deleteReply = deleteReply

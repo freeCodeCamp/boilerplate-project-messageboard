@@ -1,4 +1,4 @@
-const { generateHash } = require("../password_encryption/password");
+const { validatePassword } = require("../password_encryption/password");
 const { getThreadsArray } = require("./arrays");
 
 const BoardModel = require('../models').Board
@@ -54,7 +54,34 @@ function reportThread(board, thread_id) {
       })
 }
 
+function deleteThread(board, thread_id, delete_password) {
+    return BoardModel.findOne({ name: board })
+    .then(boardData => {
+        let thread = boardData.threads.id(thread_id)
+        return validatePassword(delete_password, thread.delete_password)
+        .then(valid => {
+            if(valid) {
+                boardData.threads.remove(thread)
+                return boardData.save()
+                .then(data => {
+                    return 'success'
+                })
+            }
+            else {
+                return 'incorrect password'
+            }
+        })
+        .catch(error => {
+            console.error(error)
+        })
+    })
+    .catch(error => {
+        console.error(error)
+    })
+}
+
 
 exports.createNewThread = createNewThread
 exports.getThreads = getThreads
 exports.reportThread = reportThread
+exports.deleteThread = deleteThread

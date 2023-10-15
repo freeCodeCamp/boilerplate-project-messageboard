@@ -1,6 +1,6 @@
 'use strict';
 
-const { createNewThread, getThreads, reportThread } = require('../controllers/thread-controller');
+const { createNewThread, getThreads, reportThread, deleteThread } = require('../controllers/thread-controller');
 const { generateHash, validatePassword } = require('../password_encryption/password');
 
 
@@ -32,23 +32,10 @@ module.exports = function (app) {
       })
     })
     .delete(function(req, res) {
-      
-      BoardModel.findOne({ name: req.params.board })
-      .then(board => {
-        let thread = board.threads.id(req.body.thread_id)
-        validatePassword(req.body.delete_password, thread.delete_password)
-        .then(valid => {
-          if(valid) {
-            board.threads.remove(thread)
-            board.save()
-            .then(data => {
-              res.send('success')
-            })
-          }
-          else {
-            res.send('incorrect password')
-          }
-        })
+
+      deleteThread(req.params.board, req.body.thread_id, req.body.delete_password)
+      .then(result => {
+        res.send(result)
       })
       
     })
@@ -95,8 +82,6 @@ module.exports = function (app) {
         })
       })
 
-      
-      
 
     })
     .get(function(req, res) {
